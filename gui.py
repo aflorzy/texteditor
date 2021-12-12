@@ -39,11 +39,11 @@ class SpellChecker(object):
     present = word in self.vocab
     if present:
       return 'Spelled correctly.'
-    print(present)
+
     candidates = self._level_one_edits(word) or self._level_two_edits(word) or self._level_three_edits(word) or [word] # Gather all possible mispellings
     best_guesses = [w for w in candidates if w in self.vocab] # Only suggest spellings that are real words
     sorted_tuples = sorted([(w, self.probs[w]) for w in best_guesses], key = lambda x: x[1], reverse=True) # Sort possible words
-    print(best_guesses)
+
     sum_probs = 0
     for e in sorted_tuples:
       sum_probs += e[1]
@@ -84,21 +84,25 @@ def spelled_correctly(word):
 
 # Clears output and places text into output from input
 def take_input():
-   output.delete("1.0", END) # Clear text in output
+  # Clear output text boxes
+   output.delete("1.0", END)
    suggest1.delete("1.0", END)
    suggest2.delete("1.0", END)
    suggest3.delete("1.0", END)
 
-   INPUT = input.get("1.0", "end-1c") # Grab all input
    start_time = time.time()# Start execution timer
+
+   INPUT = input.get("1.0", "end-1c") # Grab all input
    result = checker.check(INPUT) # Acquire suggested words
+
    stop_time = time.time()# Stop execution timer
-   # ** Stop execution timer
-   # ** Put execution time in status bar
-   # execution_time = Label(root, text="In {} seconds".format(str(round(stop_time - start_tme, 6)))).pack()
-   status = Label(root, text='{}ms'.format(str(1000 * round(stop_time - start_time, 6))), bd=2, relief=SUNKEN, anchor=E)
+
+   # Update status bar with execution time for current word
+   status = Label(root, text='{}ms'.format(str(1000 * round(stop_time - start_time, 8))), bd=2, relief=SUNKEN, anchor=E)
    status.grid(row=5, columnspan=3, sticky=W+E, pady=10)
 
+  # Print results
+  # Reset output background colors
    suggest1['bg'] = "white"
    suggest2['bg'] = "white"
    suggest3['bg'] = "white"
@@ -118,8 +122,11 @@ def take_input():
         suggest3['bg'] = colors[int(result[2][1])]
       output.insert(END, result)
 
+
+
+# Insert title
 title = Label(root, text="Start typing...")
-title.grid(row=0, column=1)
+title.grid(row=0, columnspan=3)
 
 suggest1 = Text(height=1, width=15)
 suggest2 = Text(height=1, width=15)
@@ -137,6 +144,7 @@ show.grid(row=3, column=1)
 output = Text(height=1, width=60)
 output.grid(row=4, columnspan=3, padx=5, pady=10)
 
+# Initialize status bar at bottom of window
 status = Label(root, text='', bd=2, relief=SUNKEN, anchor=E)
 status.grid(row=5, columnspan=3, sticky=W+E, padx=5, pady=10)
 
