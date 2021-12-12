@@ -9,49 +9,8 @@ from PIL import ImageTk, Image
 
 
 class SpellChecker(object):
-  # def __init__(self, dictionary_path, contractions_path, wordlist_path, probabilities_path):
   def __init__(self, wordlist_path, probabilities_path):
-
-    # with open(dictionary_path, 'r', encoding="utf8") as f: # Read in english dictionary
-    #   lines = f.readlines()
-    #   english_words = []
-    #   for line in lines:
-    #     english_words += re.findall(r'[\w\.\,\-\_\']+', line) # Read dictionary identically. Proper nouns capitalized, 1st,2nd...
-    #   english_set = set(english_words)
-
-    # with open(contractions_path, 'r', encoding="utf8") as f: # Read in special contractions
-    #   lines = f.readlines()
-    #   contraction_words = []
-    #   for line in lines:
-    #     contraction_words += re.findall(r'\w+\'\w{1,2}', line.lower()) # Convert to lowercase with optional contraction with 2 chars after '
-    #   contraction_set = set(contraction_words)
-
-    # with open(wordlist_path, 'r', encoding="utf8") as f: # Read in raw dataset for popularity
-    #   lines = f.readlines()
-    #   wordlist_raw = []
-    #   for line in lines:
-    #     temp = re.findall(r'\w+\'*\w{0,2}', line.lower()) # Convert all to lowercase with no symbols
-    #     for word in temp: # For each word in line
-    #       if (word not in english_set) and (word not in contraction_set): # Remove if not proper english or contraction
-    #         temp.remove(word)
-    #     wordlist_raw += temp
-    # words_raw = set(wordlist_raw)
-
-    # dict_raw = set(english_words + contraction_words) # Combine contractions list and english list for master vocabulary. Banks on each word occurs once in contractions and dictionary
-    # self.vocab = words_raw.intersection(dict_raw) # Only consider proper english words by AND'ing wordlist set and English set
-
-    # self.word_counts = Counter(wordlist_raw) # Get counts of each word. Proper english and contractions only
-    # total_counts = float(sum(self.word_counts.values())) # Count number of each word
-    # self.probs = {word: self.word_counts[word] / total_counts for word in self.word_counts.keys()} # Dict of probabilities (word, prob)
-    # [sorted(self.probs.items(), key= lambda item: item[1], reverse=True)]
-
-    # Write wordlist and probs to files
     import json
-    # with open('./word_probs.json', 'w', encoding='utf8') as outFile:
-      # json.dump(self.probs, outFile)
-    # with open('./english_dict.txt', 'w', encoding='utf8') as outFile:
-    #   outFile.write(str(list(dict_raw)))
-
     # Import probabilities
     with open(probabilities_path, 'r') as inFile:
       self.probs = json.load(inFile)
@@ -60,9 +19,6 @@ class SpellChecker(object):
     import ast
     with open(wordlist_path,'r') as f:
       self.vocab = set(ast.literal_eval(f.read()))
-    # print(my_set)
-    
-
 
   def _level_one_edits(self, word): # Words misspelled by one letter
     letters = string.ascii_lowercase + "\'" # List of all 26 letters
@@ -101,20 +57,15 @@ class SpellChecker(object):
       return "Spelled Correctly."
     else:
       return confidence_tuples[:3]
-   #  return sorted_tuples[:3] # Return Top 3 choices
 
-# Initialize dictionaries and SpellChecker
-# wordlist_path = './english_df.txt'
-# dictionary_path = './usa.txt'
-# contractions_path = './contractions.txt'
-# checker = SpellChecker(dictionary_path, contractions_path, wordlist_path)
+
 
 wordlist_path = './english_dict.txt'
 probabilities_path = './word_probs.json'
 checker = SpellChecker(wordlist_path, probabilities_path)
 
 
-
+# Begin GUI Section
 root = Tk() # Widget/window object
 root.title("Text Editor GUI")
 root.iconbitmap("./tf.ico")
