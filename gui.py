@@ -58,18 +58,24 @@ class SpellChecker(object):
     else:
       return confidence_tuples[:3]
 
-
+exec_start = time.time()
 
 wordlist_path = './english_dict.txt'
 probabilities_path = './word_probs.json'
 checker = SpellChecker(wordlist_path, probabilities_path)
-
+exec_stop = time.time()
+print("Started in {} seconds.".format(exec_stop - exec_start))
 
 # Begin GUI Section
 root = Tk() # Widget/window object
 root.title("Text Editor GUI")
 root.iconbitmap("./tf.ico")
-root.geometry('500x175')
+root.geometry('500x200')
+
+# Color Gradient based on certainty
+from colour import Color
+colors = list(Color("red").range_to(Color("green"), 101))
+
 
 # Grab all text in box
 # Split into tuple of words with (word, spelledcorrectly)
@@ -79,30 +85,59 @@ def spelled_correctly(word):
 # Clears output and places text into output from input
 def take_input():
    output.delete("1.0", END) # Clear text in output
+   suggest1.delete("1.0", END)
+   suggest2.delete("1.0", END)
+   suggest3.delete("1.0", END)
+
    INPUT = input.get("1.0", "end-1c") # Grab all input
    start_time = time.time()# Start execution timer
    result = checker.check(INPUT) # Acquire suggested words
-   stop_time = time.time()# Stop execution timer# ** Stop execution timer
+   stop_time = time.time()# Stop execution timer
+   # ** Stop execution timer
    # ** Put execution time in status bar
-   execution_time = Label(root, text="In {} seconds".format(str(round(stop_time - start_time, 6)))).pack()
+   # execution_time = Label(root, text="In {} seconds".format(str(round(stop_time - start_tme, 6)))).pack()
+   status = Label(root, text='{}ms'.format(str(1000 * round(stop_time - start_time, 6))), bd=2, relief=SUNKEN, anchor=E)
+   status.grid(row=5, columnspan=3, sticky=W+E, pady=10)
+
+   suggest1['bg'] = "white"
+   suggest2['bg'] = "white"
+   suggest3['bg'] = "white"
    if type(result) == str: # If correctly spelled
       output.insert(END, result) # Print "correctly spelled"
    else: # Print suggestions
-      result = [[a, "{}%".format(str(round(b, 2)))] for a,b in result]
+      # result = [[a, "{}%".format(str(round(b, 2)))] for a,b in result]
+
+      if len(result) >= 1:
+        suggest1.insert(END, result[0][0])
+        suggest1['bg'] = colors[int(result[0][1])]
+      if len(result) >= 2:
+        suggest2.insert(END, result[1][0])
+        suggest2['bg'] = colors[int(result[1][1])]
+      if len(result) >= 3:
+        suggest3.insert(END, result[2][0])
+        suggest3['bg'] = colors[int(result[2][1])]
       output.insert(END, result)
-   print(result)
 
 title = Label(root, text="Start typing...")
-title.pack()
+title.grid(row=0, column=1)
 
-input = Text(root, height=1, width=15) # Height/Width are number of lines/characters. Each character is 10px
-input.pack()
+suggest1 = Text(height=1, width=15)
+suggest2 = Text(height=1, width=15)
+suggest3 = Text(height=1, width=15)
+suggest1.grid(row=1, column=0, padx=5)
+suggest2.grid(row=1, column=1, padx=5)
+suggest3.grid(row=1, column=2, padx=5)
 
-show = Button(root, height=2, width=20, text='Check', command= lambda:take_input())
-show.pack()
+input = Text(height=1, width=15) # Height/Width are number of lines/characters. Each character is 10px
+input.grid(row=2, column=1, pady=10)
 
-output = Text(root, height=1, width=60)
-output.pack()
+show = Button(height=2, width=20, text='Check', command= lambda:take_input())
+show.grid(row=3, column=1)
+
+output = Text(height=1, width=60)
+output.grid(row=4, columnspan=3, padx=5, pady=10)
+
+status = Label(root, text='', bd=2, relief=SUNKEN, anchor=E)
+status.grid(row=5, columnspan=3, sticky=W+E, padx=5, pady=10)
 
 root.mainloop()
-
