@@ -1,3 +1,10 @@
+# Python Spellcheck Application
+# Andrew Flores
+# Created for ECE528 Final Project FA21
+# Colorado State University
+# Last updated: 12/13/21
+
+
 import re
 import time
 import numpy as np
@@ -53,7 +60,7 @@ class SpellChecker(object):
        w = sorted_tuples[e][0] # Store word
        t = (w, c)# Create tuple
        confidence_tuples.append(t) # Add (word, confidence) to result
-    if word in self.vocab:
+    if present:
       return "Spelled Correctly."
     else:
       return confidence_tuples[:3]
@@ -61,32 +68,20 @@ class SpellChecker(object):
   def get_vocab(self):
     return self.vocab
 
-exec_start = time.time()
-
-wordlist_path = './english_dict.txt'
-probabilities_path = './word_probs.json'
-checker = SpellChecker(wordlist_path, probabilities_path)
-exec_stop = time.time()
-print("Started in {} seconds.".format(exec_stop - exec_start))
-
-# Begin GUI Section
-root = Tk() # Widget/window object
-root.title("Text Editor GUI")
-root.iconbitmap("./tf.ico")
-root.geometry('500x200')
-
-# Color Gradient based on certainty
-from colour import Color
-colors = list(Color("red").range_to(Color("green"), 101))
-
-
-# Grab all text in box
-# Split into tuple of words with (word, spelledcorrectly)
+# Return if word is in English dictionary
 def spelled_correctly(word):
    return word in checker.get_vocab()
 
-result = []
-
+# Replace word in input Text box
+def replace(suggestion=None, word=None):
+  if suggestion == None or word == None:
+    return
+  else:
+    INPUT = input.get('1.0', END)
+    INPUT = INPUT.replace(word, suggestion)
+    input.delete('1.0', END)
+    input.insert(END, INPUT)
+    take_input()
 
 # Clears output and places text into output from input
 def take_input():
@@ -130,6 +125,7 @@ def take_input():
 
   suggest(result)
 
+# Input suggestions to boxes 
 def suggest(result): 
   # Print results
   # Clear suggestion boxes
@@ -156,7 +152,7 @@ def suggest(result):
       suggest3.insert(END, result[2][0])
       suggest3['bg'] = colors[int(result[2][1])]
 
-
+# Right-click menu on highlighted words
 def do_popup(event):
   global result
   start_time = time.time()
@@ -184,17 +180,27 @@ def do_popup(event):
   status.grid(row=5, columnspan=3, sticky=W+E, pady=10)
 
   try:
-    # Initialize menu items to ...
-    m.entryconfigure(0, label='...')
-    m.entryconfigure(1, label='...')
-    m.entryconfigure(2, label='...')
     # Populate menu with corrected words if present
-    if len(result) >= 1:
-      m.entryconfigure(0, label=result[0][0])
-    if len(result) >= 2:
-      m.entryconfigure(1, label=result[1][0])
     if len(result) >= 3:
-      m.entryconfigure(2, label=result[2][0])
+      m.delete(0, 2)
+      m.add_command(label=result[0][0], command= lambda:replace(result[0][0], word))
+      m.add_command(label=result[1][0], command= lambda:replace(result[1][0], word))
+      m.add_command(label=result[2][0], command= lambda:replace(result[2][0], word))
+    elif len(result) >= 2:
+      m.delete(0, 2)
+      m.add_command(label=result[0][0], command= lambda:replace(result[0][0], word))
+      m.add_command(label=result[1][0], command= lambda:replace(result[1][0], word))
+      m.add_command(label='...', command=replace)
+    elif len(result) >= 1:
+      m.delete(0, 2)
+      m.add_command(label=result[0][0], command= lambda:replace(result[0][0], word))
+      m.add_command(label='...', command=replace)
+      m.add_command(label='...', command=replace)
+    else:
+      m.delete(0, 2)
+      m.add_command(label='...', command=replace)
+      m.add_command(label='...', command=replace)
+      m.add_command(label='...', command=replace)
 
     # Popup relative to NW corner of screen
     m.tk_popup(event.x_root, event.y_root)
@@ -203,6 +209,28 @@ def do_popup(event):
     m.grab_release()
 
 
+# ***** INITIALIZE GLOBAL VARIABLES ***** #
+# Start execution timer
+exec_start = time.time()
+# Initialize global result variable
+# *Must include 'global result' in each method that references it*
+result = []
+# Color Gradient based on certainty
+from colour import Color
+colors = list(Color("red").range_to(Color("green"), 101))
+
+wordlist_path = './english_dict.txt'
+probabilities_path = './word_probs.json'
+checker = SpellChecker(wordlist_path, probabilities_path)
+exec_stop = time.time()
+print("Started in {} seconds.".format(exec_stop - exec_start))
+
+
+# Begin GUI Section
+root = Tk() # Widget/window object
+root.title("Python Spellcheck GUI")
+# root.iconbitmap("./tf.ico")
+root.geometry('500x200')
 
 # Insert title
 title = Label(root, text="Start typing...")
@@ -223,7 +251,6 @@ input.tag_config('red_tag', foreground='red', underline=1)
 input.tag_config('none_tag', foreground='black', underline=0)
 input.tag_bind('red_tag', '<Button-3>', do_popup)
 
-
 # Button to flush results
 show = Button(height=2, width=20, text='Check', command= lambda:take_input())
 show.grid(row=3, column=1)
@@ -241,7 +268,5 @@ m = Menu(root, tearoff=0)
 m.add_command(label= '...')
 m.add_command(label= '...')
 m.add_command(label= '...')
-
-
 
 root.mainloop()
