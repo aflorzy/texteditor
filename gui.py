@@ -85,28 +85,23 @@ colors = list(Color("red").range_to(Color("green"), 101))
 def spelled_correctly(word):
    return word in checker.get_vocab()
 
-def clear_tags(object):
-  object.tag_delete('red_tag')
-  object.tag_delete('none_tag')
-
-
-
+result = []
 
 
 # Clears output and places text into output from input
 def take_input():
+  global result # Reference global result variable
+
   # Clear output text boxes
-  output.delete("1.0", END)
-  suggest1.delete("1.0", END)
-  suggest2.delete("1.0", END)
-  suggest3.delete("1.0", END)
+  # suggest1.delete("1.0", END)
+  # suggest2.delete("1.0", END)
+  # suggest3.delete("1.0", END)
 
   start_time = time.time()# Start execution timer
 
   INPUT = input.get("1.0", "end-1c").strip() # Grab all input
   # Split input into word list by whitespace
   inList = INPUT.split()
-  print(input.tag_names())
   for word in inList:
     if not spelled_correctly(word.lower()):
       offset = '+%dc' % len(word) # +5c (5 chars)
@@ -125,13 +120,6 @@ def take_input():
         input.tag_remove('red_tag', pos2_start, pos2_end)
         pos2_start = input.search(word, pos2_end, END)
 
-
-
-
-
-
-
-  global result
   result = checker.check(INPUT.lower()) # Acquire suggested words
 
   stop_time = time.time()# Stop execution timer
@@ -140,13 +128,21 @@ def take_input():
   status = Label(root, text='{}ms'.format(str(1000 * round(stop_time - start_time, 8))), bd=2, relief=SUNKEN, anchor=E)
   status.grid(row=5, columnspan=3, sticky=W+E, pady=10)
 
-# Print results
-# Reset output background colors
+  suggest(result)
+
+def suggest(result): 
+  # Print results
+  # Clear suggestion boxes
+  # Reset output background colors
+  suggest1.delete("1.0", END)
+  suggest2.delete("1.0", END)
+  suggest3.delete("1.0", END)
   suggest1['bg'] = "white"
   suggest2['bg'] = "white"
   suggest3['bg'] = "white"
   if type(result) == str: # If correctly spelled
-    output.insert(END, result) # Print "correctly spelled"
+    status = Label(root, text='No spelling errors.', bd=2, relief=SUNKEN, anchor=E)
+    status.grid(row=5, columnspan=3, sticky=W+E, pady=10)
   else: # Print suggestions
     # result = [[a, "{}%".format(str(round(b, 2)))] for a,b in result]
 
@@ -159,28 +155,40 @@ def take_input():
     if len(result) >= 3:
       suggest3.insert(END, result[2][0])
       suggest3['bg'] = colors[int(result[2][1])]
-    # output.insert(END, result)
 
 
-
-
-# Initialize right-click menu with ... for each suggestion
-m = Menu(root, tearoff=0)
-m.add_command(label= '...')
-# m.add_separator()
-m.add_command(label= '...')
-# m.add_separator()
-m.add_command(label= '...')
-
-# Method to call menu upon event (Right click)
 def do_popup(event):
+  global result
+  start_time = time.time
+
+  cursor_pos = input.index(INSERT).split('.')
+  tag_ranges = input.tag_ranges('red_tag')
+ 
+  closest = int(cursor_pos[1]) - int(str(tag_ranges[0]).split('.')[1])
+  for i in range(len(tag_ranges)):
+    if i % 2 == 0:
+      temp = str(tag_ranges[i]).split('.')
+      distance = int(cursor_pos[1]) - int(temp[1])
+      if distance >= 0 and distance < closest:
+        closest = distance
+  start_tag = cursor_pos[0] + '.' + str(int(cursor_pos[1]) - closest)
+  tag_range = input.tag_nextrange('red_tag', start_tag)
+  word = input.get(tag_range[0], tag_range[1])
+  result = checker.check(word)
+
+  # Update suggestion boxes
+  suggest(result)
+  
+  stop_time = time.time
+  status = Label(root, text='{}ms'.format(str(1000 * round(stop_time - start_time, 8))), bd=2, relief=SUNKEN, anchor=E)
+  status.grid(row=5, columnspan=3, sticky=W+E, pady=10)
+  
   try:
     # Initialize menu items to ...
     m.entryconfigure(0, label='...')
     m.entryconfigure(1, label='...')
     m.entryconfigure(2, label='...')
     # Populate menu with corrected words if present
-    print(result)
     if len(result) >= 1:
       m.entryconfigure(0, label=result[0][0])
     if len(result) >= 2:
@@ -194,16 +202,13 @@ def do_popup(event):
   finally:
     m.grab_release()
 
-  
-
-
-
 
 
 # Insert title
 title = Label(root, text="Start typing...")
 title.grid(row=0, columnspan=3)
 
+# Add suggestion boxes
 suggest1 = Text(height=1, width=15)
 suggest2 = Text(height=1, width=15)
 suggest3 = Text(height=1, width=15)
@@ -211,22 +216,31 @@ suggest1.grid(row=1, column=0, padx=5)
 suggest2.grid(row=1, column=1, padx=5)
 suggest3.grid(row=1, column=2, padx=5)
 
+# Add input text box
 input = Text(height=3, width=60) # Height/Width are number of lines/characters. Each character is 10px
 input.grid(row=2, columnspan=3, pady=10)
 input.tag_config('red_tag', foreground='red', underline=1)
 input.tag_config('none_tag', foreground='black', underline=0)
 input.tag_bind('red_tag', '<Button-3>', do_popup)
 
+
+# Button to flush results
 show = Button(height=2, width=20, text='Check', command= lambda:take_input())
 show.grid(row=3, column=1)
-
-output = Text(height=1, width=60)
-output.grid(row=4, columnspan=3, padx=5, pady=10)
+# Flush output with enter button
+def flush(event):
+  take_input()
+root.bind('<Return>', flush)
 
 # Initialize status bar at bottom of window
 status = Label(root, text='', bd=2, relief=SUNKEN, anchor=E)
 status.grid(row=5, columnspan=3, sticky=W+E, padx=5, pady=10)
 
+# Initialize right-click menu with ... for each suggestion
+m = Menu(root, tearoff=0)
+m.add_command(label= '...')
+m.add_command(label= '...')
+m.add_command(label= '...')
 
 
 
