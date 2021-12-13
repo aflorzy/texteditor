@@ -89,6 +89,10 @@ def clear_tags(object):
   object.tag_delete('red_tag')
   object.tag_delete('none_tag')
 
+
+
+
+
 # Clears output and places text into output from input
 def take_input():
   # Clear output text boxes
@@ -127,8 +131,8 @@ def take_input():
 
 
 
-
-  result = checker.check(INPUT) # Acquire suggested words
+  global result
+  result = checker.check(INPUT.lower()) # Acquire suggested words
 
   stop_time = time.time()# Stop execution timer
 
@@ -159,6 +163,43 @@ def take_input():
 
 
 
+
+# Initialize right-click menu with ... for each suggestion
+m = Menu(root, tearoff=0)
+m.add_command(label= '...')
+# m.add_separator()
+m.add_command(label= '...')
+# m.add_separator()
+m.add_command(label= '...')
+
+# Method to call menu upon event (Right click)
+def do_popup(event):
+  try:
+    # Initialize menu items to ...
+    m.entryconfigure(0, label='...')
+    m.entryconfigure(1, label='...')
+    m.entryconfigure(2, label='...')
+    # Populate menu with corrected words if present
+    print(result)
+    if len(result) >= 1:
+      m.entryconfigure(0, label=result[0][0])
+    if len(result) >= 2:
+      m.entryconfigure(1, label=result[1][0])
+    if len(result) >= 3:
+      m.entryconfigure(2, label=result[2][0])
+
+    # Popup relative to NW corner of screen
+    m.tk_popup(event.x_root, event.y_root)
+
+  finally:
+    m.grab_release()
+
+  
+
+
+
+
+
 # Insert title
 title = Label(root, text="Start typing...")
 title.grid(row=0, columnspan=3)
@@ -174,7 +215,7 @@ input = Text(height=3, width=60) # Height/Width are number of lines/characters. 
 input.grid(row=2, columnspan=3, pady=10)
 input.tag_config('red_tag', foreground='red', underline=1)
 input.tag_config('none_tag', foreground='black', underline=0)
-
+input.tag_bind('red_tag', '<Button-3>', do_popup)
 
 show = Button(height=2, width=20, text='Check', command= lambda:take_input())
 show.grid(row=3, column=1)
@@ -185,5 +226,8 @@ output.grid(row=4, columnspan=3, padx=5, pady=10)
 # Initialize status bar at bottom of window
 status = Label(root, text='', bd=2, relief=SUNKEN, anchor=E)
 status.grid(row=5, columnspan=3, sticky=W+E, padx=5, pady=10)
+
+
+
 
 root.mainloop()
