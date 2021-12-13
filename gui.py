@@ -58,6 +58,9 @@ class SpellChecker(object):
     else:
       return confidence_tuples[:3]
 
+  def get_vocab(self):
+    return self.vocab
+
 exec_start = time.time()
 
 wordlist_path = './english_dict.txt'
@@ -80,47 +83,79 @@ colors = list(Color("red").range_to(Color("green"), 101))
 # Grab all text in box
 # Split into tuple of words with (word, spelledcorrectly)
 def spelled_correctly(word):
-   return word in SpellChecker.vocab
+   return word in checker.get_vocab()
+
+def clear_tags(object):
+  object.tag_delete('red_tag')
+  object.tag_delete('none_tag')
 
 # Clears output and places text into output from input
 def take_input():
   # Clear output text boxes
-   output.delete("1.0", END)
-   suggest1.delete("1.0", END)
-   suggest2.delete("1.0", END)
-   suggest3.delete("1.0", END)
+  output.delete("1.0", END)
+  suggest1.delete("1.0", END)
+  suggest2.delete("1.0", END)
+  suggest3.delete("1.0", END)
 
-   start_time = time.time()# Start execution timer
+  start_time = time.time()# Start execution timer
 
-   INPUT = input.get("1.0", "end-1c") # Grab all input
-   result = checker.check(INPUT) # Acquire suggested words
+  INPUT = input.get("1.0", "end-1c").strip() # Grab all input
+  # Split input into word list by whitespace
+  inList = INPUT.split()
+  print(input.tag_names())
+  for word in inList:
+    if not spelled_correctly(word.lower()):
+      offset = '+%dc' % len(word) # +5c (5 chars)
+      pos1_start = input.search(word, '1.0', END)
+      while pos1_start:
+        pos1_end = pos1_start + offset
+        # Add red tag to incorrect words
+        input.tag_add('red_tag', pos1_start, pos1_end)
+        pos1_start = input.search(word, pos1_end, END)
+    else:
+      offset = '+%dc' % len(word) # +5c (5 chars)
+      pos2_start = input.search(word, '1.0', END)
+      while pos2_start:
+        pos2_end = pos2_start + offset
+        # Remove red tag from correct words
+        input.tag_remove('red_tag', pos2_start, pos2_end)
+        pos2_start = input.search(word, pos2_end, END)
 
-   stop_time = time.time()# Stop execution timer
 
-   # Update status bar with execution time for current word
-   status = Label(root, text='{}ms'.format(str(1000 * round(stop_time - start_time, 8))), bd=2, relief=SUNKEN, anchor=E)
-   status.grid(row=5, columnspan=3, sticky=W+E, pady=10)
 
-  # Print results
-  # Reset output background colors
-   suggest1['bg'] = "white"
-   suggest2['bg'] = "white"
-   suggest3['bg'] = "white"
-   if type(result) == str: # If correctly spelled
-      output.insert(END, result) # Print "correctly spelled"
-   else: # Print suggestions
-      # result = [[a, "{}%".format(str(round(b, 2)))] for a,b in result]
 
-      if len(result) >= 1:
-        suggest1.insert(END, result[0][0])
-        suggest1['bg'] = colors[int(result[0][1])]
-      if len(result) >= 2:
-        suggest2.insert(END, result[1][0])
-        suggest2['bg'] = colors[int(result[1][1])]
-      if len(result) >= 3:
-        suggest3.insert(END, result[2][0])
-        suggest3['bg'] = colors[int(result[2][1])]
-      output.insert(END, result)
+
+
+
+
+  result = checker.check(INPUT) # Acquire suggested words
+
+  stop_time = time.time()# Stop execution timer
+
+  # Update status bar with execution time for current word
+  status = Label(root, text='{}ms'.format(str(1000 * round(stop_time - start_time, 8))), bd=2, relief=SUNKEN, anchor=E)
+  status.grid(row=5, columnspan=3, sticky=W+E, pady=10)
+
+# Print results
+# Reset output background colors
+  suggest1['bg'] = "white"
+  suggest2['bg'] = "white"
+  suggest3['bg'] = "white"
+  if type(result) == str: # If correctly spelled
+    output.insert(END, result) # Print "correctly spelled"
+  else: # Print suggestions
+    # result = [[a, "{}%".format(str(round(b, 2)))] for a,b in result]
+
+    if len(result) >= 1:
+      suggest1.insert(END, result[0][0])
+      suggest1['bg'] = colors[int(result[0][1])]
+    if len(result) >= 2:
+      suggest2.insert(END, result[1][0])
+      suggest2['bg'] = colors[int(result[1][1])]
+    if len(result) >= 3:
+      suggest3.insert(END, result[2][0])
+      suggest3['bg'] = colors[int(result[2][1])]
+    # output.insert(END, result)
 
 
 
@@ -135,8 +170,11 @@ suggest1.grid(row=1, column=0, padx=5)
 suggest2.grid(row=1, column=1, padx=5)
 suggest3.grid(row=1, column=2, padx=5)
 
-input = Text(height=1, width=15) # Height/Width are number of lines/characters. Each character is 10px
-input.grid(row=2, column=1, pady=10)
+input = Text(height=3, width=60) # Height/Width are number of lines/characters. Each character is 10px
+input.grid(row=2, columnspan=3, pady=10)
+input.tag_config('red_tag', foreground='red', underline=1)
+input.tag_config('none_tag', foreground='black', underline=0)
+
 
 show = Button(height=2, width=20, text='Check', command= lambda:take_input())
 show.grid(row=3, column=1)
