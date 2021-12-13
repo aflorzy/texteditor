@@ -159,7 +159,7 @@ def suggest(result):
 
 def do_popup(event):
   global result
-  start_time = time.time
+  start_time = time.time()
 
   cursor_pos = input.index(INSERT).split('.')
   tag_ranges = input.tag_ranges('red_tag')
@@ -179,10 +179,10 @@ def do_popup(event):
   # Update suggestion boxes
   suggest(result)
   
-  stop_time = time.time
+  stop_time = time.time()
   status = Label(root, text='{}ms'.format(str(1000 * round(stop_time - start_time, 8))), bd=2, relief=SUNKEN, anchor=E)
   status.grid(row=5, columnspan=3, sticky=W+E, pady=10)
-  
+
   try:
     # Initialize menu items to ...
     m.entryconfigure(0, label='...')
