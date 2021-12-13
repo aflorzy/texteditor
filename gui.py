@@ -230,7 +230,7 @@ show.grid(row=3, column=1)
 # Flush output with enter button
 def flush(event):
   take_input()
-root.bind('<Return>', flush)
+root.bind('<space>', flush)
 
 # Initialize status bar at bottom of window
 status = Label(root, text='', bd=2, relief=SUNKEN, anchor=E)
