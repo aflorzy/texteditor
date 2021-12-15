@@ -7,6 +7,9 @@
 
 import re
 import time
+import pandas as pd
+import json
+import time
 import numpy as np
 import string
 from collections import Counter
@@ -68,6 +71,56 @@ class SpellChecker(object):
   def get_vocab(self):
     return self.vocab
 
+class TextGeneration(object):
+  n_dict = {}
+  def __init__(self, ngrams_path):
+      with open(ngrams_path, 'r') as inFile:
+          self.n_dict = json.load(inFile)
+
+  # Joins list of words into string
+  def join_words(self, l):
+      result = ''
+      for w in l:
+          result += w + ' '
+      # Return string without trailing spaces
+      return result.strip()
+
+
+  # Gets last 3 words of string, or two or one
+  def get_last_three(self, str, seed):
+      words = str.strip(' ,.()\'\"').split(' ')
+      length = len(words)
+      subset = []
+      # Truncate phrase to look at 'seed' number of words, and initialize subset list
+      if length >= seed:
+          subset = words[-seed:]
+      elif length == 0:
+          return [key.strip() for key in self.n_dict[:3]]
+      else:
+          subset = words
+
+      subset_str = self.join_words(subset)
+      # If subset is in a dict key, missing a word
+      suggestions = []
+      # Search for 3 suggestions
+      offset_length = 0
+      # Get 3 suggestions, or stop if looking for 
+      while len(suggestions) < 3 and length + offset_length <= 7:
+          offset_length += 1
+          for key in self.n_dict:
+              if len(suggestions) == 3:
+                  break
+              if self.n_dict[key] == length + offset_length:
+                  # if subset is found in the FIRST part of the key
+                  if re.search(r'\b' + subset_str + r'\b', key) and key.find(subset_str) == 0:
+                      suggestions.append(key.strip())
+
+      # Suggestions are formed with original prompt still included
+      pared_suggestions = []
+      for e in suggestions:
+          pared_suggestions.append(e.removeprefix(subset_str).strip())
+      return pared_suggestions
+
 # Return if word is in English dictionary
 def spelled_correctly(word):
    return word in checker.get_vocab()
@@ -86,11 +139,6 @@ def replace(suggestion=None, word=None):
 # Clears output and places text into output from input
 def take_input():
   global result # Reference global result variable
-
-  # Clear output text boxes
-  # suggest1.delete("1.0", END)
-  # suggest2.delete("1.0", END)
-  # suggest3.delete("1.0", END)
 
   start_time = time.time()# Start execution timer
 
@@ -116,6 +164,11 @@ def take_input():
         pos2_start = input.search(word, pos2_end, END)
 
   result = checker.check(INPUT.lower()) # Acquire suggested words
+  
+  # Populate suggesiton boxes
+  suggest(result)
+  # Populate prediction boxes
+  generate(INPUT)
 
   stop_time = time.time()# Stop execution timer
 
@@ -123,7 +176,28 @@ def take_input():
   status = Label(root, text='{}ms'.format(str(1000 * round(stop_time - start_time, 8))), bd=2, relief=SUNKEN, anchor=E)
   status.grid(row=5, columnspan=3, sticky=W+E, pady=10)
 
-  suggest(result)
+def generate(input):
+  # Seed length is number of previous words to base off of
+  seed_length = 5
+  predictions = generator.get_last_three(input, seed_length)
+  # Clear prediction boxes
+  predict1.delete("1.0", END)
+  predict2.delete("1.0", END)
+  predict3.delete("1.0", END)
+  predict1['bg'] = "white"
+  predict2['bg'] = "white"
+  predict3['bg'] = "white"
+
+  if len(predictions) >= 1:
+    predict1.insert(END, predictions[0])
+    predict1['bg'] = "lightblue"
+  if len(predictions) >= 2:
+    predict2.insert(END, predictions[1])
+    predict2['bg'] = "lightblue"
+  if len(predictions) >= 3:
+    predict3.insert(END, predictions[2])
+    predict3['bg'] = "lightblue"
+
 
 # Input suggestions to boxes 
 def suggest(result): 
@@ -219,18 +293,26 @@ result = []
 from colour import Color
 colors = list(Color("red").range_to(Color("green"), 101))
 
+ngrams_path = 'everygrams5000_dict.txt'
+generator = TextGeneration(ngrams_path)
 wordlist_path = './english_dict.txt'
-probabilities_path = './word_probs.json'
+probabilities_path = './full_probs.json'
 checker = SpellChecker(wordlist_path, probabilities_path)
 exec_stop = time.time()
 print("Started in {} seconds.".format(exec_stop - exec_start))
+
+
+
+
+
+
 
 
 # Begin GUI Section
 root = Tk() # Widget/window object
 root.title("Python Spellcheck GUI")
 # root.iconbitmap("./tf.ico")
-root.geometry('500x200')
+root.geometry('500x220')
 
 # Insert title
 title = Label(root, text="Start typing...")
@@ -244,16 +326,24 @@ suggest1.grid(row=1, column=0, padx=5)
 suggest2.grid(row=1, column=1, padx=5)
 suggest3.grid(row=1, column=2, padx=5)
 
+predict1 = Text(height=1, width=15)
+predict2 = Text(height=1, width=15)
+predict3 = Text(height=1, width=15)
+predict1.grid(row=2, column=0, padx=5, pady=5)
+predict2.grid(row=2, column=1, padx=5, pady=5)
+predict3.grid(row=2, column=2, padx=5, pady=5)
+
+
 # Add input text box
 input = Text(height=3, width=60) # Height/Width are number of lines/characters. Each character is 10px
-input.grid(row=2, columnspan=3, pady=10)
+input.grid(row=3, columnspan=3, pady=10)
 input.tag_config('red_tag', foreground='red', underline=1)
 input.tag_config('none_tag', foreground='black', underline=0)
 input.tag_bind('red_tag', '<Button-3>', do_popup)
 
 # Button to flush results
 show = Button(height=2, width=20, text='Check', command= lambda:take_input())
-show.grid(row=3, column=1)
+show.grid(row=4, column=1)
 # Flush output with enter button
 def flush(event):
   take_input()
