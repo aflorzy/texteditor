@@ -85,7 +85,8 @@ class TextGeneration(object):
       # Return string without trailing spaces
       return result.strip()
 
-
+  # TODO: Predict on substring of substring...
+  # Change length to seed in while loop. I prefer how it works when broken
   # Gets last 3 words of string, or two or one
   def get_last_three(self, str, seed):
       words = str.strip(' ,.()\'\"').split(' ')
@@ -186,7 +187,6 @@ def generate(input):
   # Seed length is number of previous words to base off of
   seed_length = 5
   predictions = generator.get_last_three(input, seed_length)
-  print(predictions)
   # Clear prediction boxes
   clear_predictions()
 
