@@ -7,10 +7,9 @@
 
 import re
 import time
-import pandas as pd
+# import pandas as pd
 import json
 import time
-import numpy as np
 import string
 from collections import Counter
 
@@ -46,7 +45,7 @@ class SpellChecker(object):
     return set([e2 for e1 in self._level_one_edits(word) for e2 in self._level_two_edits(e1)]) # Run L1edits for each L2edit to get words 3 letters off
 
   def check(self, word): # Spellcheck algorithm
-    present = word in self.vocab
+    present = spelled_correctly(word)
     if present:
       return 'Spelled correctly.'
 
@@ -101,7 +100,7 @@ class TextGeneration(object):
               if self.n_dict[key] == seed + 1:
                   # if subset is found in the FIRST part of the key
                   if re.search(r'\b' + subset_str + r'\b', key) and key.find(subset_str) == 0:
-                      suggestions.append(key.strip())
+                      suggestions.append(key.removeprefix(subset_str).strip())
           seed -= 1
       # Suggestions are formed with original prompt still included
       pared_suggestions = []
@@ -117,7 +116,7 @@ def flush(event):
 
 # Return if word is in English dictionary
 def spelled_correctly(word):
-   return word in checker.get_vocab()
+   return re.sub('[^a-zA-Z0-9\']+', '', word).lower() in checker.get_vocab()
 
 # Replace word in input Text box
 def replace(suggestion=None, word=None):
@@ -345,7 +344,7 @@ print("Started in {} seconds.".format(exec_stop - exec_start))
 root = Tk() # Widget/window object
 root.title("Python Spellcheck GUI")
 # root.iconbitmap("./tf.ico")
-root.geometry('500x220')
+root.geometry('525x260')
 
 # Insert title
 title = Label(root, text="Start typing...")
@@ -359,9 +358,9 @@ suggest1.grid(row=1, column=0, padx=5)
 suggest2.grid(row=1, column=1, padx=5)
 suggest3.grid(row=1, column=2, padx=5)
 
-predict1 = Text(height=1, width=15, state=DISABLED)
-predict2 = Text(height=1, width=15, state=DISABLED)
-predict3 = Text(height=1, width=15, state=DISABLED)
+predict1 = Text(height=1, width=20, state=DISABLED)
+predict2 = Text(height=1, width=20, state=DISABLED)
+predict3 = Text(height=1, width=20, state=DISABLED)
 predict1.grid(row=2, column=0, padx=5, pady=5)
 predict2.grid(row=2, column=1, padx=5, pady=5)
 predict3.grid(row=2, column=2, padx=5, pady=5)
@@ -372,15 +371,11 @@ predict3.bind('<Button-1>', insert_prediction3)
 
 
 # Add input text box
-input = Text(height=3, width=60) # Height/Width are number of lines/characters. Each character is 10px
+input = Text(height=8, width=60) # Height/Width are number of lines/characters. Each character is 10px
 input.grid(row=3, columnspan=3, pady=10)
 input.tag_config('red_tag', foreground='red', underline=1)
 input.tag_config('none_tag', foreground='black', underline=0)
 input.tag_bind('red_tag', '<Button-3>', do_popup)
-
-# Button to flush results
-show = Button(height=2, width=20, text='Check', command= lambda:take_input())
-show.grid(row=4, column=1)
 
 # Flush output with spacebar
 root.bind('<space>', flush)
