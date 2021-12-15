@@ -121,6 +121,12 @@ class TextGeneration(object):
           pared_suggestions.append(e.removeprefix(subset_str).strip())
       return pared_suggestions
 
+# Flush outputs
+def flush(event):
+  clear_predictions()
+  clear_suggestions()
+  take_input()
+
 # Return if word is in English dictionary
 def spelled_correctly(word):
    return word in checker.get_vocab()
@@ -131,9 +137,7 @@ def replace(suggestion=None, word=None):
     return
   else:
     INPUT = input.get('1.0', END)
-    INPUT = INPUT.replace(word, suggestion)
-    input.delete('1.0', END)
-    input.insert(END, INPUT)
+    input.replace('1.0', END, INPUT.replace(word, suggestion))
     take_input()
 
 # Clears output and places text into output from input
@@ -176,40 +180,58 @@ def take_input():
   status = Label(root, text='{}ms'.format(str(1000 * round(stop_time - start_time, 8))), bd=2, relief=SUNKEN, anchor=E)
   status.grid(row=5, columnspan=3, sticky=W+E, pady=10)
 
+# Input predictions to boxes
 def generate(input):
+  global predictions
   # Seed length is number of previous words to base off of
   seed_length = 5
   predictions = generator.get_last_three(input, seed_length)
+  print(predictions)
   # Clear prediction boxes
-  predict1.delete("1.0", END)
-  predict2.delete("1.0", END)
-  predict3.delete("1.0", END)
-  predict1['bg'] = "white"
-  predict2['bg'] = "white"
-  predict3['bg'] = "white"
+  clear_predictions()
 
   if len(predictions) >= 1:
+    predict1.config(state=NORMAL)
     predict1.insert(END, predictions[0])
     predict1['bg'] = "lightblue"
+    predict1.config(state=DISABLED)
   if len(predictions) >= 2:
+    predict2.config(state=NORMAL)
     predict2.insert(END, predictions[1])
     predict2['bg'] = "lightblue"
+    predict2.config(state=DISABLED)
   if len(predictions) >= 3:
+    predict3.config(state=NORMAL)
     predict3.insert(END, predictions[2])
     predict3['bg'] = "lightblue"
+    predict3.config(state=DISABLED)
 
+# Insert clicked prediction into input
+def insert_prediction1(event):
+  if len(predictions) >= 1:
+    INPUT = input.get('1.0', END)
+    result_str = INPUT.strip() + " " + predictions[0] + " "
+    input.replace('1.0', END, result_str)
+    take_input()
+def insert_prediction2(event):
+  if len(predictions) >= 2:
+    INPUT = input.get('1.0', END)
+    result_str = INPUT.strip() + " " + predictions[1] + " "
+    input.replace('1.0', END, result_str)
+    take_input()
+def insert_prediction3(event):
+  if len(predictions) >= 3:
+    INPUT = input.get('1.0', END)
+    result_str = INPUT.strip() + " " + predictions[2] + " "
+    input.replace('1.0', END, result_str)
+    take_input()
 
 # Input suggestions to boxes 
 def suggest(result): 
   # Print results
   # Clear suggestion boxes
   # Reset output background colors
-  suggest1.delete("1.0", END)
-  suggest2.delete("1.0", END)
-  suggest3.delete("1.0", END)
-  suggest1['bg'] = "white"
-  suggest2['bg'] = "white"
-  suggest3['bg'] = "white"
+  clear_suggestions()
   if type(result) == str: # If correctly spelled
     status = Label(root, text='No spelling errors.', bd=2, relief=SUNKEN, anchor=E)
     status.grid(row=5, columnspan=3, sticky=W+E, pady=10)
@@ -282,6 +304,29 @@ def do_popup(event):
   finally:
     m.grab_release()
 
+# Clear prediction boxes
+def clear_predictions():
+  predict1.config(state=NORMAL)
+  predict2.config(state=NORMAL)
+  predict3.config(state=NORMAL)
+  predict1.delete("1.0", END)
+  predict2.delete("1.0", END)
+  predict3.delete("1.0", END)
+  predict1['bg'] = "white"
+  predict2['bg'] = "white"
+  predict3['bg'] = "white"
+  predict1.config(state=DISABLED)
+  predict2.config(state=DISABLED)
+  predict3.config(state=DISABLED)
+
+# Clear suggestion boxes
+def clear_suggestions():
+  suggest1.delete("1.0", END)
+  suggest2.delete("1.0", END)
+  suggest3.delete("1.0", END)
+  suggest1['bg'] = "white"
+  suggest2['bg'] = "white"
+  suggest3['bg'] = "white"
 
 # ***** INITIALIZE GLOBAL VARIABLES ***** #
 # Start execution timer
@@ -289,11 +334,12 @@ exec_start = time.time()
 # Initialize global result variable
 # *Must include 'global result' in each method that references it*
 result = []
+predictions = []
 # Color Gradient based on certainty
 from colour import Color
 colors = list(Color("red").range_to(Color("green"), 101))
 
-ngrams_path = 'everygrams5000_dict.txt'
+ngrams_path = 'everygrams15000_dict.txt'
 generator = TextGeneration(ngrams_path)
 wordlist_path = './english_dict.txt'
 probabilities_path = './full_probs.json'
@@ -326,12 +372,16 @@ suggest1.grid(row=1, column=0, padx=5)
 suggest2.grid(row=1, column=1, padx=5)
 suggest3.grid(row=1, column=2, padx=5)
 
-predict1 = Text(height=1, width=15)
-predict2 = Text(height=1, width=15)
-predict3 = Text(height=1, width=15)
+predict1 = Text(height=1, width=15, state=DISABLED)
+predict2 = Text(height=1, width=15, state=DISABLED)
+predict3 = Text(height=1, width=15, state=DISABLED)
 predict1.grid(row=2, column=0, padx=5, pady=5)
 predict2.grid(row=2, column=1, padx=5, pady=5)
 predict3.grid(row=2, column=2, padx=5, pady=5)
+predict1.bind('<Button-1>', insert_prediction1)
+predict2.bind('<Button-1>', insert_prediction2)
+predict3.bind('<Button-1>', insert_prediction3)
+
 
 
 # Add input text box
@@ -344,9 +394,8 @@ input.tag_bind('red_tag', '<Button-3>', do_popup)
 # Button to flush results
 show = Button(height=2, width=20, text='Check', command= lambda:take_input())
 show.grid(row=4, column=1)
-# Flush output with enter button
-def flush(event):
-  take_input()
+
+# Flush output with spacebar
 root.bind('<space>', flush)
 
 # Initialize status bar at bottom of window
