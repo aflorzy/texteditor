@@ -85,37 +85,24 @@ class TextGeneration(object):
       # Return string without trailing spaces
       return result.strip()
 
-  # TODO: Predict on substring of substring...
-  # Change length to seed in while loop. I prefer how it works when broken
+  # Find best match first (longest seed match with length >= words.len() + 1)
   # Gets last 3 words of string, or two or one
   def get_last_three(self, str, seed):
       words = str.strip(' ,.()\'\"').split(' ')
-      length = len(words)
       subset = []
-      # Truncate phrase to look at 'seed' number of words, and initialize subset list
-      if length >= seed:
-          subset = words[-seed:]
-      elif length == 0:
-          return [key.strip() for key in self.n_dict[:3]]
-      else:
-          subset = words
-
-      subset_str = self.join_words(subset)
-      # If subset is in a dict key, missing a word
       suggestions = []
-      # Search for 3 suggestions
-      offset_length = 0
-      # Get 3 suggestions, or stop if looking for 
-      while len(suggestions) < 3 and length + offset_length <= 7:
-          offset_length += 1
+      # Get 3 suggestions, or stop if looking if no matches
+      while len(suggestions) < 3 and seed > 0:
+          subset = words[-seed:]
+          subset_str = self.join_words(subset)
           for key in self.n_dict:
               if len(suggestions) == 3:
                   break
-              if self.n_dict[key] == length + offset_length:
+              if self.n_dict[key] == seed + 1:
                   # if subset is found in the FIRST part of the key
                   if re.search(r'\b' + subset_str + r'\b', key) and key.find(subset_str) == 0:
                       suggestions.append(key.strip())
-
+          seed -= 1
       # Suggestions are formed with original prompt still included
       pared_suggestions = []
       for e in suggestions:
