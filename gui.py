@@ -4,7 +4,7 @@
 # Colorado State University
 # Last updated: 12/13/21
 
-
+import pathlib
 import re
 import time
 # import pandas as pd
@@ -100,12 +100,12 @@ class TextGeneration(object):
               if self.n_dict[key] == seed + 1:
                   # if subset is found in the FIRST part of the key
                   if re.search(r'\b' + subset_str + r'\b', key) and key.find(subset_str) == 0:
-                      suggestions.append(key.removeprefix(subset_str).strip())
+                      suggestions.append(key.lstrip(subset_str).strip())
           seed -= 1
       # Suggestions are formed with original prompt still included
       pared_suggestions = []
       for e in suggestions:
-          pared_suggestions.append(e.removeprefix(subset_str).strip())
+          pared_suggestions.append(e.lstrip(subset_str).strip())
       return pared_suggestions
 
 # Flush outputs
