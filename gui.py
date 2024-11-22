@@ -7,15 +7,10 @@
 import pathlib
 import re
 import time
-# import pandas as pd
-import json
-import time
-import string
-from collections import Counter
-
 from tkinter import *
 from PIL import ImageTk, Image
-
+from autocorrect import SpellChecker
+from generator import TextGeneration
 
 class SpellChecker(object):
   def __init__(self, wordlist_path, probabilities_path):
